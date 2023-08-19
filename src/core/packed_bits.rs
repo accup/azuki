@@ -14,23 +14,52 @@ impl PackedBitsCompress {
         }
     }
 
-    pub fn push(&mut self, byte: u8, writer: &mut impl Write) -> std::io::Result<()> {
+    pub fn push(&mut self, byte: u8, writer: &mut impl Write) -> std::io::Result<usize> {
         self.buffer.push(byte);
 
         if self.buffer.len() >= Self::CAP_SIZE {
-            self.flush(writer)?;
+            self.flush(writer)
+        } else {
+            Ok(0)
         }
-
-        Ok(())
     }
 
-    pub fn flush(&mut self, writer: &mut impl Write) -> std::io::Result<()> {
-        if self.buffer.len() > 0 {
-            writer.write_all(&[(self.buffer.len() - 1) as u8])?;
+    pub fn flush(&mut self, writer: &mut impl Write) -> std::io::Result<usize> {
+        let size = self.buffer.len();
+
+        if size > 0 {
+            writer.write_all(&[(size - 1) as u8])?;
             writer.write_all(&self.buffer)?;
             self.buffer.clear();
-        }
 
-        Ok(())
+            Ok(size)
+        } else {
+            Ok(0)
+        }
+    }
+}
+
+pub struct PackedBitsExtract {
+    count: usize,
+}
+
+impl PackedBitsExtract {
+    pub fn new() -> Self {
+        Self { count: 0 }
+    }
+
+    pub fn is_consumed(&self) -> bool {
+        return self.count <= 0;
+    }
+
+    pub fn push(&mut self, byte: u8, writer: &mut impl Write) -> std::io::Result<Option<u8>> {
+        if self.is_consumed() {
+            self.count = (byte as usize) + 1;
+            Ok(None)
+        } else {
+            writer.write_all(&[byte])?;
+            self.count -= 1;
+            Ok(Some(byte))
+        }
     }
 }

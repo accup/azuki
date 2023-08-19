@@ -2,17 +2,17 @@ use std::path::Path;
 
 use clap::Args;
 
-use crate::core::{compress, Command};
+use crate::core::{extract, Command};
 
-pub struct FreezeCommand;
+pub struct MicrowaveCommand;
 
 #[derive(Args)]
-pub struct FreezeCommandArgs {
+pub struct MicrowaveCommandArgs {
     pub filename: String,
 }
 
-impl Command for FreezeCommand {
-    type Args = FreezeCommandArgs;
+impl Command for MicrowaveCommand {
+    type Args = MicrowaveCommandArgs;
 
     fn execute(&self, args: &Self::Args) {
         let input_path = Path::new(&args.filename);
@@ -22,19 +22,27 @@ impl Command for FreezeCommand {
                 .extension()
                 .map(|ext| ext.to_str().unwrap_or(""))
                 .unwrap_or("");
+            if ext == "frozen" {
+                buf.set_extension("");
+            }
+
+            let ext = buf
+                .extension()
+                .map(|ext| ext.to_str().unwrap_or(""))
+                .unwrap_or("");
+
             buf.set_extension(if ext.is_empty() {
-                String::from("frozen")
+                String::from("hot")
             } else {
-                format!("{}.frozen", ext)
+                format!("hot.{}", ext)
             });
+
             buf
         };
         let output_path = output_path_buf.as_path();
 
-        if let Err(e) = compress(input_path, output_path) {
+        if let Err(e) = extract(input_path, output_path) {
             eprintln!("ERROR: {}", e);
         }
-
-        println!("{} ...> {}", input_path.display(), output_path.display());
     }
 }
