@@ -24,5 +24,5 @@ azuki freeze INPUT_FILENAME[.EXT]
 
 ```bash
 azuki microwave INPUT_FILENAME[.EXT].frozen
-# file generated at INPUT_FILENAME.hot[.EXT]
+# file generated at INPUT_FILENAME[.EXT]
 ```
