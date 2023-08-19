@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufReader, BufWriter},
+    io::{BufReader, BufWriter, Read, Write},
     path::Path,
 };
 
@@ -15,7 +15,15 @@ pub fn compress(input_path: &Path, output_path: &Path) -> std::io::Result<()> {
 
     let mut lz77 = LZ77Compress::new();
 
-    while lz77.next(&mut reader, &mut writer)? {}
+    while lz77.compress_next(&mut reader, &mut writer)? {}
 
     Ok(())
+}
+
+pub trait Compress {
+    fn compress_next(
+        &mut self,
+        reader: &mut impl Read,
+        writer: &mut impl Write,
+    ) -> std::io::Result<bool>;
 }
