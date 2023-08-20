@@ -5,6 +5,7 @@ mod extract;
 mod lz77;
 mod match_layout;
 mod packed_bits;
+mod suffix_array;
 
 pub use command::Command;
 pub use compress::compress;
