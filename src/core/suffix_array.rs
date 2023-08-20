@@ -275,6 +275,47 @@ pub fn suffix_array<T: PartialEq + PartialOrd, B: BucketOption<T>>(
         .collect()
 }
 
+pub fn rank_array(suffix_array: &[usize]) -> Vec<usize> {
+    let mut rank_array = vec![0usize; suffix_array.len()];
+
+    for (rank, &index) in suffix_array.iter().enumerate() {
+        rank_array[index] = rank;
+    }
+
+    rank_array
+}
+
+pub fn lcp_array<T: PartialEq + PartialOrd>(
+    data: &[T],
+    suffix_array: &[usize],
+    rank_array: &[usize],
+) -> Vec<usize> {
+    if data.is_empty() {
+        return vec![];
+    }
+
+    let mut lcp_array = vec![0usize; data.len()];
+    let mut lcp = 0;
+
+    for index1 in 0..data.len() {
+        let rank1 = rank_array[index1];
+        let rank0 = if rank1 > 0 { rank1 - 1 } else { continue };
+        let index0 = suffix_array[rank0];
+
+        while index0 + lcp < data.len()
+            && index1 + lcp < data.len()
+            && &data[index0 + lcp] == &data[index1 + lcp]
+        {
+            lcp += 1;
+        }
+
+        lcp_array[rank1] = lcp;
+        lcp = lcp.saturating_sub(1);
+    }
+
+    lcp_array
+}
+
 struct Key {
     index: usize,
 }

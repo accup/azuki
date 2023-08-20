@@ -1,6 +1,6 @@
 use std::io::stdin;
 
-use azuki::core::suffix_array::{suffix_array, BucketOption};
+use azuki::core::suffix_array::{lcp_array, rank_array, suffix_array, BucketOption};
 
 struct CharBucket;
 
@@ -18,6 +18,20 @@ fn main() {
     let mut input = String::new();
     stdin().read_line(&mut input).unwrap();
 
-    let sa = suffix_array(&input.chars().collect::<Vec<_>>(), &CharBucket);
-    println!("{:?}", sa);
+    let input = input.trim_end();
+
+    let chars = input.chars().collect::<Vec<_>>();
+    let sa = suffix_array(&chars, &CharBucket);
+    let rank = rank_array(&sa);
+    let lcp = lcp_array(&chars, &sa, &rank);
+
+    for (&index, &lcp) in sa.iter().zip(lcp.iter()) {
+        println!(
+            "{:>4} {:>3}: {}{}",
+            index,
+            lcp,
+            &input[index..input.len().min(index + 8)],
+            if index + 9 < input.len() { "..." } else { "" },
+        );
+    }
 }
