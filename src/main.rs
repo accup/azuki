@@ -1,10 +1,10 @@
-use crate::core::Command;
+pub mod commands;
+
+use crate::commands::{
+    Command, FreezeCommand, FreezeCommandArgs, MicrowaveCommand, MicrowaveCommandArgs,
+};
 
 use clap::{Parser, Subcommand};
-use commands::{FreezeCommand, FreezeCommandArgs, MicrowaveCommand, MicrowaveCommandArgs};
-
-pub mod commands;
-pub mod core;
 
 #[derive(Parser)]
 #[command(name = "azuki", version)]

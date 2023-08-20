@@ -1,12 +1,11 @@
-mod bar;
-mod command;
+pub mod bar;
+pub mod lz77;
+pub mod match_layout;
+pub mod packed_bits;
+pub mod suffix_array;
+
 mod compress;
 mod extract;
-mod lz77;
-mod match_layout;
-mod packed_bits;
-mod suffix_array;
 
-pub use command::Command;
 pub use compress::compress;
 pub use extract::extract;

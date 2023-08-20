@@ -2,7 +2,9 @@ use std::path::Path;
 
 use clap::Args;
 
-use crate::core::{extract, Command};
+use azuki::core::extract;
+
+use super::command::Command;
 
 pub struct MicrowaveCommand;
 

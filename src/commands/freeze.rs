@@ -2,7 +2,9 @@ use std::path::Path;
 
 use clap::Args;
 
-use crate::core::{compress, Command};
+use azuki::core::compress;
+
+use super::command::Command;
 
 pub struct FreezeCommand;
 
