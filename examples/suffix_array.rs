@@ -14,6 +14,12 @@ impl BucketOption<char> for CharBucket {
     }
 }
 
+#[derive(Clone, Copy)]
+enum Type {
+    L,
+    S,
+}
+
 fn main() {
     let mut input = String::new();
     stdin().read_line(&mut input).unwrap();
@@ -25,13 +31,31 @@ fn main() {
     let rank = rank_array(&sa);
     let lcp = lcp_array(&chars, &sa, &rank);
 
+    let mut types = vec![Type::L; chars.len()];
+    for index in (1..chars.len()).rev() {
+        types[index - 1] = if chars[index - 1] == chars[index] {
+            types[index]
+        } else if chars[index - 1] < chars[index] {
+            Type::S
+        } else {
+            Type::L
+        };
+    }
+
     for (&index, &lcp) in sa.iter().zip(lcp.iter()) {
         println!(
-            "{:>8} ({:>8}): {}{}",
+            "{:>8} ({:>8}): {:<13} {}",
             index,
             lcp,
-            &String::from_iter(chars[index..chars.len().min(index + 8)].into_iter()),
-            if index + 9 < chars.len() { "..." } else { "" },
+            format!(
+                "{}{}",
+                String::from_iter(chars[index..chars.len().min(index + 8)].into_iter()),
+                if index + 8 < chars.len() { "..." } else { "" }
+            ),
+            match types[index] {
+                Type::L => "L",
+                Type::S => "S",
+            }
         );
     }
 }

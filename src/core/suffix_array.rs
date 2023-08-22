@@ -52,7 +52,7 @@ enum Type {
     L,
 }
 
-fn induced_sort<T: PartialEq + PartialOrd, B: BucketOption<T>>(
+fn induced_sort<T, B: BucketOption<T>>(
     data: &[T],
     types: &[Type],
     buckets: &mut Vec<SuffixArrayBucket>,
@@ -158,10 +158,7 @@ fn induced_sort<T: PartialEq + PartialOrd, B: BucketOption<T>>(
     }
 }
 
-pub fn suffix_array<T: PartialEq + PartialOrd, B: BucketOption<T>>(
-    data: &[T],
-    bucket_option: &B,
-) -> Vec<usize> {
+pub fn suffix_array<T, B: BucketOption<T>>(data: &[T], bucket_option: &B) -> Vec<usize> {
     if data.is_empty() {
         return vec![];
     }
@@ -169,9 +166,11 @@ pub fn suffix_array<T: PartialEq + PartialOrd, B: BucketOption<T>>(
     let mut types = vec![Type::L; data.len()];
 
     for index in (1..data.len()).rev() {
-        types[index - 1] = if data[index - 1] == data[index] {
+        let bucket_index0 = bucket_option.bucket_index(&data[index - 1]);
+        let bucket_index1 = bucket_option.bucket_index(&data[index]);
+        types[index - 1] = if bucket_index0 == bucket_index1 {
             types[index]
-        } else if data[index - 1] < data[index] {
+        } else if bucket_index0 < bucket_index1 {
             Type::S
         } else {
             Type::L
@@ -202,12 +201,12 @@ pub fn suffix_array<T: PartialEq + PartialOrd, B: BucketOption<T>>(
 
     // Sort LMS
     let lms_suffix_array = {
-        let mut orders: Vec<usize> = vec![0; lms_indices.len()];
-        let mut sort_order = 0usize;
+        let mut lms_ranks: Vec<usize> = vec![0; lms_indices.len()];
+        let mut lms_rank = 0usize;
 
         // Scan buckets
         for bucket in buckets.iter() {
-            // S in backward
+            // S in backward-backward
             for &index in bucket.s_typed.iter().rev() {
                 if index <= 0 {
                     continue;
@@ -215,13 +214,18 @@ pub fn suffix_array<T: PartialEq + PartialOrd, B: BucketOption<T>>(
 
                 let Type::L = types[index - 1] else { continue };
 
-                orders[lms_orders[index]] = sort_order;
-                sort_order += 1;
+                lms_ranks[lms_orders[index]] = lms_rank;
+                lms_rank += 1;
             }
         }
 
         // Calc LMS suffix array
-        suffix_array(&orders, &IndexBucket { size: orders.len() })
+        suffix_array(
+            &lms_ranks,
+            &IndexBucket {
+                size: lms_ranks.len(),
+            },
+        )
     };
 
     // Clear all items from buckets
