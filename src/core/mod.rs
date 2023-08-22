@@ -5,6 +5,7 @@ pub mod match_layout;
 pub mod packed_bits;
 pub mod segment_tree;
 pub mod suffix_array;
+pub mod suffix_reference;
 
 mod compress;
 mod extract;

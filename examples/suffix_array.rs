@@ -27,11 +27,11 @@ fn main() {
 
     for (&index, &lcp) in sa.iter().zip(lcp.iter()) {
         println!(
-            "{:>4} {:>3}: {}{}",
+            "{:>8} ({:>8}): {}{}",
             index,
             lcp,
-            &input[index..input.len().min(index + 8)],
-            if index + 9 < input.len() { "..." } else { "" },
+            &String::from_iter(chars[index..chars.len().min(index + 8)].into_iter()),
+            if index + 9 < chars.len() { "..." } else { "" },
         );
     }
 }

@@ -1,11 +1,9 @@
-use std::collections::BTreeMap;
-
 pub trait BucketOption<T> {
     fn size(&self) -> usize;
     fn bucket_index(&self, value: &T) -> usize;
 }
 
-struct U8Bucket;
+pub struct U8Bucket;
 
 impl BucketOption<u8> for U8Bucket {
     fn size(&self) -> usize {
@@ -64,12 +62,9 @@ fn induced_sort<T: PartialEq + PartialOrd, B: BucketOption<T>>(
     if data.len() > 0 {
         let index = data.len() - 1;
 
-        match types[index] {
-            Type::L => {
-                let bucket_index = bucket_option.bucket_index(&data[index]);
-                buckets[bucket_index].l_typed.push(index);
-            }
-            _ => {}
+        if let Type::L = types[index] {
+            let bucket_index = bucket_option.bucket_index(&data[index]);
+            buckets[bucket_index].l_typed.push(index);
         }
     }
 
@@ -83,12 +78,9 @@ fn induced_sort<T: PartialEq + PartialOrd, B: BucketOption<T>>(
                 let index = buckets[bucket_index].l_typed[l_index];
 
                 if index > 0 {
-                    match types[index - 1] {
-                        Type::L => {
-                            let bucket_index = bucket_option.bucket_index(&data[index - 1]);
-                            buckets[bucket_index].l_typed.push(index - 1);
-                        }
-                        _ => {}
+                    if let Type::L = types[index - 1] {
+                        let bucket_index = bucket_option.bucket_index(&data[index - 1]);
+                        buckets[bucket_index].l_typed.push(index - 1);
                     }
                 }
 
@@ -107,12 +99,9 @@ fn induced_sort<T: PartialEq + PartialOrd, B: BucketOption<T>>(
                 };
 
                 if index > 0 {
-                    match types[index - 1] {
-                        Type::L => {
-                            let bucket_index = bucket_option.bucket_index(&data[index - 1]);
-                            buckets[bucket_index].l_typed.push(index - 1);
-                        }
-                        _ => {}
+                    if let Type::L = types[index - 1] {
+                        let bucket_index = bucket_option.bucket_index(&data[index - 1]);
+                        buckets[bucket_index].l_typed.push(index - 1);
                     }
                 }
 
@@ -136,12 +125,9 @@ fn induced_sort<T: PartialEq + PartialOrd, B: BucketOption<T>>(
                 let index = buckets[bucket_index].s_typed[s_index];
 
                 if index > 0 {
-                    match types[index - 1] {
-                        Type::S => {
-                            let bucket_index = bucket_option.bucket_index(&data[index - 1]);
-                            buckets[bucket_index].s_typed.push(index - 1);
-                        }
-                        _ => {}
+                    if let Type::S = types[index - 1] {
+                        let bucket_index = bucket_option.bucket_index(&data[index - 1]);
+                        buckets[bucket_index].s_typed.push(index - 1);
                     }
                 }
 
@@ -160,12 +146,9 @@ fn induced_sort<T: PartialEq + PartialOrd, B: BucketOption<T>>(
                 };
 
                 if index > 0 {
-                    match types[index - 1] {
-                        Type::S => {
-                            let bucket_index = bucket_option.bucket_index(&data[index - 1]);
-                            buckets[bucket_index].s_typed.push(index - 1);
-                        }
-                        _ => {}
+                    if let Type::S = types[index - 1] {
+                        let bucket_index = bucket_option.bucket_index(&data[index - 1]);
+                        buckets[bucket_index].s_typed.push(index - 1);
                     }
                 }
 
@@ -201,16 +184,11 @@ pub fn suffix_array<T: PartialEq + PartialOrd, B: BucketOption<T>>(
 
     // collect left-most S-typed indices
     for index in 1..data.len() {
-        match types[index - 1] {
-            Type::L => match types[index] {
-                Type::S => {
-                    lms_orders[index] = lms_indices.len();
-                    lms_indices.push(index);
-                }
-                _ => {}
-            },
-            _ => {}
-        }
+        let Type::L = types[index - 1] else { continue };
+        let Type::S = types[index] else { continue };
+
+        lms_orders[index] = lms_indices.len();
+        lms_indices.push(index);
     }
 
     // insert left-most S-typed indices into S-typed buckets
@@ -231,15 +209,14 @@ pub fn suffix_array<T: PartialEq + PartialOrd, B: BucketOption<T>>(
         for bucket in buckets.iter() {
             // S in backward
             for &index in bucket.s_typed.iter().rev() {
-                if index > 0 {
-                    match types[index - 1] {
-                        Type::L => {
-                            orders[lms_orders[index]] = sort_order;
-                            sort_order += 1;
-                        }
-                        _ => {}
-                    }
+                if index <= 0 {
+                    continue;
                 }
+
+                let Type::L = types[index - 1] else { continue };
+
+                orders[lms_orders[index]] = sort_order;
+                sort_order += 1;
             }
         }
 
@@ -299,7 +276,12 @@ pub fn lcp_array<T: PartialEq + PartialOrd>(
 
     for index1 in 0..data.len() {
         let rank1 = rank_array[index1];
-        let rank0 = if rank1 > 0 { rank1 - 1 } else { continue };
+        let rank0 = if rank1 > 0 {
+            rank1 - 1
+        } else {
+            lcp = 0;
+            continue;
+        };
         let index0 = suffix_array[rank0];
 
         while index0 + lcp < data.len()
@@ -314,28 +296,4 @@ pub fn lcp_array<T: PartialEq + PartialOrd>(
     }
 
     lcp_array
-}
-
-struct Key {
-    index: usize,
-}
-
-struct Value {}
-
-pub struct DrainingSuffixArray<'a> {
-    data: &'a [u8],
-    tree: BTreeMap<Key, Value>,
-}
-
-impl<'a> DrainingSuffixArray<'a> {
-    pub fn new(data: &'a [u8]) -> Self {
-        Self {
-            data,
-            tree: BTreeMap::new(),
-        }
-    }
-
-    pub fn drain(&mut self, size: usize) {
-        self.data = &self.data[..size]
-    }
 }
