@@ -32,9 +32,9 @@ impl BucketOption<usize> for IndexBucket {
 #[derive(Clone)]
 struct SuffixArrayBucket {
     /** Forward order */
-    pub l_typed: Vec<usize>,
+    l_typed: Vec<usize>,
     /** Backward order */
-    pub s_typed: Vec<usize>,
+    s_typed: Vec<usize>,
 }
 
 impl SuffixArrayBucket {
@@ -178,7 +178,7 @@ pub fn suffix_array<T, B: BucketOption<T>>(data: &[T], bucket_option: &B) -> Vec
     }
 
     let mut lms_orders: Vec<usize> = vec![0; data.len()];
-    let mut lms_indices: Vec<usize> = Vec::new();
+    let mut lms_ranges: Vec<(usize, usize)> = Vec::new();
     let mut buckets: Vec<SuffixArrayBucket> = vec![SuffixArrayBucket::new(); bucket_option.size()];
 
     // collect left-most S-typed indices
@@ -186,12 +186,16 @@ pub fn suffix_array<T, B: BucketOption<T>>(data: &[T], bucket_option: &B) -> Vec
         let Type::L = types[index - 1] else { continue };
         let Type::S = types[index] else { continue };
 
-        lms_orders[index] = lms_indices.len();
-        lms_indices.push(index);
+        if let Some(lms_range) = lms_ranges.last_mut() {
+            lms_range.1 = index + 1;
+        }
+
+        lms_orders[index] = lms_ranges.len();
+        lms_ranges.push((index, data.len()));
     }
 
     // insert left-most S-typed indices into S-typed buckets
-    for &index in lms_indices.iter() {
+    for &(index, ..) in lms_ranges.iter() {
         let bucket_index = bucket_option.bucket_index(&data[index]);
         buckets[bucket_index].s_typed.push(index);
     }
@@ -201,11 +205,12 @@ pub fn suffix_array<T, B: BucketOption<T>>(data: &[T], bucket_option: &B) -> Vec
 
     // Sort LMS
     let lms_suffix_array = {
-        let mut lms_ranks: Vec<usize> = vec![0; lms_indices.len()];
+        let mut lms_ranks: Vec<usize> = vec![0; lms_ranges.len()];
         let mut lms_rank = 0usize;
+        let mut last_lms_order: Option<usize> = None;
 
         // Scan buckets
-        for bucket in buckets.iter() {
+        for bucket in &buckets {
             // S in backward-backward
             for &index in bucket.s_typed.iter().rev() {
                 if index <= 0 {
@@ -214,8 +219,32 @@ pub fn suffix_array<T, B: BucketOption<T>>(data: &[T], bucket_option: &B) -> Vec
 
                 let Type::L = types[index - 1] else { continue };
 
-                lms_ranks[lms_orders[index]] = lms_rank;
-                lms_rank += 1;
+                let lms_order = lms_orders[index];
+                let lms_range = &lms_ranges[lms_order];
+
+                if let Some(last_order) = last_lms_order {
+                    let last_lms_range = lms_ranges[last_order];
+
+                    let lms_len = lms_range.1 - lms_range.0;
+                    let last_lms_len = last_lms_range.1 - last_lms_range.0;
+
+                    let is_same = (lms_len == last_lms_len) && {
+                        (0..lms_len).any(|i| {
+                            let class = bucket_option.bucket_index(&data[lms_range.0 + i]);
+                            let last_class =
+                                bucket_option.bucket_index(&data[last_lms_range.0 + i]);
+
+                            class == last_class
+                        })
+                    };
+
+                    if !is_same {
+                        lms_rank += 1;
+                    }
+                }
+
+                lms_ranks[lms_order] = lms_rank;
+                last_lms_order = Some(lms_order);
             }
         }
 
@@ -236,7 +265,7 @@ pub fn suffix_array<T, B: BucketOption<T>>(data: &[T], bucket_option: &B) -> Vec
 
     // insert left-most S-typed indices into S-typed buckets in backward-backward order
     for &suffix_index in lms_suffix_array.iter().rev() {
-        let index = lms_indices[suffix_index];
+        let (index, ..) = lms_ranges[suffix_index];
         let bucket_index = bucket_option.bucket_index(&data[index]);
         buckets[bucket_index].s_typed.push(index);
     }
