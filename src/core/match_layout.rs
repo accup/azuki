@@ -1,5 +1,39 @@
 use std::io::Write;
 
+use super::{
+    converter::Converter,
+    head::{Head, LeadingZero},
+};
+
+pub struct MatchLayoutCompressor<'a, W: Write> {
+    writer: &'a mut W,
+}
+
+impl<'a, W: Write + 'a> MatchLayoutCompressor<'a, W> {
+    fn compress(left: usize, count: usize, buffer: &mut [u8]) {
+        Head::<LeadingZero>::compress(left, buffer);
+        Head::<LeadingZero>::compress(count, buffer);
+    }
+
+    pub fn measure(left: usize, count: usize) -> usize {
+        Head::<LeadingZero>::measure(left) + Head::<LeadingZero>::measure(count)
+    }
+}
+
+impl<'a, W: Write> MatchLayoutCompressor<'a, W> {
+    fn new(writer: &'a mut W) -> Self {
+        Self { writer }
+    }
+
+    fn convert(&mut self, left: usize, count: usize) -> std::io::Result<()> {
+        let size = Self::measure(left, count);
+        let mut buffer = vec![0; size];
+        Self::compress(left, count, &mut buffer);
+        self.writer.write_all(&buffer)?;
+        Ok(())
+    }
+}
+
 pub struct Match {
     pub left: usize,
     pub count: usize,
