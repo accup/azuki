@@ -1,5 +1,6 @@
 pub mod algebra;
 pub mod bar;
+pub mod converter;
 pub mod lz77;
 pub mod match_layout;
 pub mod packed_bits;

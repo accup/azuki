@@ -1,6 +1,6 @@
 use std::io::stdin;
 
-use azuki::core::suffix_array::{lcp_array, rank_array, suffix_array, BucketOption};
+use azuki::core::suffix_array::{lcp_array, rank_array, suffix_array, BucketOption, SuffixType};
 
 struct CharBucket;
 
@@ -14,12 +14,6 @@ impl BucketOption<char> for CharBucket {
     }
 }
 
-#[derive(Clone, Copy)]
-enum Type {
-    L,
-    S,
-}
-
 fn main() {
     let mut input = String::new();
     stdin().read_line(&mut input).unwrap();
@@ -31,14 +25,14 @@ fn main() {
     let rank = rank_array(&sa);
     let lcp = lcp_array(&chars, &sa, &rank);
 
-    let mut types = vec![Type::L; chars.len()];
+    let mut types = vec![SuffixType::L; chars.len()];
     for index in (1..chars.len()).rev() {
         types[index - 1] = if chars[index - 1] == chars[index] {
             types[index]
         } else if chars[index - 1] < chars[index] {
-            Type::S
+            SuffixType::S
         } else {
-            Type::L
+            SuffixType::L
         };
     }
 
@@ -53,8 +47,8 @@ fn main() {
                 if index + 8 < chars.len() { "..." } else { "" }
             ),
             match types[index] {
-                Type::L => "L",
-                Type::S => "S",
+                SuffixType::L => "L",
+                SuffixType::S => "S",
             }
         );
     }
