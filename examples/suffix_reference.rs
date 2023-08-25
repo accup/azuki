@@ -29,14 +29,13 @@ fn main() {
 
         let Ok(index) = index_input.trim().parse() else { break };
         let Some(back) = suffix_ref.back(index) else { continue };
-        let Some(lcp) = suffix_ref.back_lcp(index) else { continue };
 
-        println!("({:>8})", lcp);
+        println!("({:>8})", back.lcp);
 
         println!(
             "[{:>8}] {}{}",
-            back,
-            &String::from_iter(chars[back..chars.len().min(back + 8)].into_iter()),
+            back.index,
+            &String::from_iter(chars[back.index..chars.len().min(back.index + 8)].into_iter()),
             if index + 9 < chars.len() { "..." } else { "" },
         );
 

@@ -3,7 +3,7 @@ use std::{marker::PhantomData, mem::size_of};
 pub trait HeadType {
     fn mark(byte_count: usize, buffer: &mut [u8]);
 
-    fn count_leading(data: &[u8]) -> usize;
+    fn count_leading(buffer: &[u8]) -> usize;
 }
 
 pub struct LeadingZero;
@@ -33,11 +33,11 @@ impl HeadType for LeadingZero {
         }
     }
 
-    fn count_leading(data: &[u8]) -> usize {
+    fn count_leading(buffer: &[u8]) -> usize {
         let mut count: usize = 0;
 
-        for i in 0..data.len() {
-            let zeros = data[i].leading_zeros() as usize;
+        for i in 0..buffer.len() {
+            let zeros = buffer[i].leading_zeros() as usize;
             count += zeros;
 
             if zeros < 8 {
@@ -75,11 +75,11 @@ impl HeadType for LeadingOne {
         }
     }
 
-    fn count_leading(data: &[u8]) -> usize {
+    fn count_leading(buffer: &[u8]) -> usize {
         let mut count: usize = 0;
 
-        for i in 0..data.len() {
-            let ones = data[i].leading_ones() as usize;
+        for i in 0..buffer.len() {
+            let ones = buffer[i].leading_ones() as usize;
             count += ones;
 
             if ones < 8 {
@@ -96,8 +96,8 @@ pub struct Head<H: HeadType> {
 }
 
 impl<H: HeadType> Head<H> {
-    pub fn measure(value: usize) -> usize {
-        match value {
+    pub fn measure(data: &usize) -> usize {
+        match data {
             0x0000000000000000..=0x000000000000003F => 1,
             0x0000000000000040..=0x0000000000001FFF => 2,
             0x0000000000002000..=0x00000000000FFFFF => 3,
@@ -112,23 +112,27 @@ impl<H: HeadType> Head<H> {
         }
     }
 
-    pub fn compress(value: usize, buffer: &mut [u8]) -> usize {
-        let head_size = Self::measure(value);
+    pub fn compress(data: &usize, buffer: &mut [u8]) -> usize {
+        let head_size = Self::measure(data);
 
-        let bytes = value.to_be_bytes();
+        let bytes = data.to_be_bytes();
         let bytes = &bytes[(size_of::<usize>().saturating_sub(head_size))..];
 
         buffer[(head_size - bytes.len())..head_size].copy_from_slice(bytes);
-        H::mark(value, buffer);
+        H::mark(*data, buffer);
 
         head_size
     }
 
-    pub fn extract(data: &[u8], value: &mut usize) -> usize {
-        let head_size = H::count_leading(data);
+    pub fn prepare(_: &[u8]) -> usize {
+        Default::default()
+    }
+
+    pub fn extract(buffer: &[u8], data: &mut usize) -> usize {
+        let head_size = H::count_leading(buffer);
 
         let mut head = vec![0u8; head_size];
-        head.copy_from_slice(&data[..head_size]);
+        head.copy_from_slice(&buffer[..head_size]);
 
         head[0] &= match head_size {
             0 => panic!("Too low size {}", head_size),
@@ -157,7 +161,7 @@ impl<H: HeadType> Head<H> {
         let head = &head[(head.len().saturating_sub(size_of::<usize>()))..];
         bytes[(size_of::<usize>() - head.len())..].copy_from_slice(head);
 
-        *value = usize::from_be_bytes(bytes);
+        *data = usize::from_be_bytes(bytes);
 
         head_size
     }

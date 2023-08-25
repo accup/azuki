@@ -1,45 +1,45 @@
 use std::io::Write;
 
-use super::{
-    converter::Converter,
-    head::{Head, LeadingZero},
-};
+use super::head::{Head, HeadType, LeadingZero};
 
-pub struct MatchLayoutCompressor<'a, W: Write> {
-    writer: &'a mut W,
-}
-
-impl<'a, W: Write + 'a> MatchLayoutCompressor<'a, W> {
-    fn compress(left: usize, count: usize, buffer: &mut [u8]) {
-        Head::<LeadingZero>::compress(left, buffer);
-        Head::<LeadingZero>::compress(count, buffer);
-    }
-
-    pub fn measure(left: usize, count: usize) -> usize {
-        Head::<LeadingZero>::measure(left) + Head::<LeadingZero>::measure(count)
-    }
-}
-
-impl<'a, W: Write> MatchLayoutCompressor<'a, W> {
-    fn new(writer: &'a mut W) -> Self {
-        Self { writer }
-    }
-
-    fn convert(&mut self, left: usize, count: usize) -> std::io::Result<()> {
-        let size = Self::measure(left, count);
-        let mut buffer = vec![0; size];
-        Self::compress(left, count, &mut buffer);
-        self.writer.write_all(&buffer)?;
-        Ok(())
-    }
-}
-
+#[derive(Debug)]
 pub struct Match {
     pub left: usize,
     pub count: usize,
 }
 
-pub trait MatchLayout {
+pub struct MatchLayout;
+
+impl MatchLayout {
+    pub fn measure(data: &Match) -> usize {
+        Head::<LeadingZero>::measure(&data.left) + Head::<LeadingZero>::measure(&data.count)
+    }
+
+    pub fn compress(data: &Match, buffer: &mut [u8]) -> usize {
+        let mut cursor = Head::<LeadingZero>::compress(&data.left, buffer);
+        cursor += Head::<LeadingZero>::compress(&data.count, &mut buffer[cursor..]);
+        cursor
+    }
+
+    pub fn check(buffer: &[u8]) -> bool {
+        LeadingZero::count_leading(buffer) > 0
+    }
+
+    pub fn prepare(_: &[u8]) -> Match {
+        Match {
+            left: Default::default(),
+            count: Default::default(),
+        }
+    }
+
+    pub fn extract(buffer: &[u8], data: &mut Match) -> usize {
+        let mut cursor = Head::<LeadingZero>::extract(buffer, &mut data.left);
+        cursor += Head::<LeadingZero>::extract(&buffer[cursor..], &mut data.count);
+        cursor
+    }
+}
+
+pub trait MatchLayoutTrait {
     const MAX_LEFT: usize;
     const MAX_COUNT: usize;
 
@@ -52,7 +52,7 @@ pub trait MatchLayout {
 
 pub struct MatchLayoutC2L13;
 
-impl MatchLayout for MatchLayoutC2L13 {
+impl MatchLayoutTrait for MatchLayoutC2L13 {
     const MAX_LEFT: usize = 8192;
     const MAX_COUNT: usize = 4;
 
@@ -84,7 +84,7 @@ impl MatchLayout for MatchLayoutC2L13 {
 
 pub struct MatchLayoutC3L12;
 
-impl MatchLayout for MatchLayoutC3L12 {
+impl MatchLayoutTrait for MatchLayoutC3L12 {
     const MAX_LEFT: usize = 4096;
     const MAX_COUNT: usize = 8;
 
@@ -116,7 +116,7 @@ impl MatchLayout for MatchLayoutC3L12 {
 
 pub struct MatchLayoutC4L11;
 
-impl MatchLayout for MatchLayoutC4L11 {
+impl MatchLayoutTrait for MatchLayoutC4L11 {
     const MAX_LEFT: usize = 2048;
     const MAX_COUNT: usize = 16;
 
@@ -148,7 +148,7 @@ impl MatchLayout for MatchLayoutC4L11 {
 
 pub struct MatchLayoutL7C8;
 
-impl MatchLayout for MatchLayoutL7C8 {
+impl MatchLayoutTrait for MatchLayoutL7C8 {
     const MAX_LEFT: usize = 128;
     const MAX_COUNT: usize = 256;
 

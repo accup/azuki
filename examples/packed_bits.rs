@@ -1,9 +1,6 @@
 use std::io::stdin;
 
-use azuki::core::{
-    converter::Converter,
-    packed_bits::{PackedBitsCompressor, PackedBitsExtractor},
-};
+use azuki::core::packed_bits::PackedBits;
 
 fn main() {
     let mut input = String::new();
@@ -12,11 +9,10 @@ fn main() {
     let input = input.trim_end();
     let size: usize = input.parse().unwrap();
 
-    let mut packed = Vec::new();
-    let mut packed_bits = PackedBitsCompressor::new(&mut packed);
-    packed_bits
-        .convert(&(0..size).map(|v| v as u8).collect::<Vec<_>>())
-        .unwrap();
+    let data = (0..size).map(|v| v as u8).collect::<Vec<_>>();
+
+    let mut packed = vec![Default::default(); PackedBits::measure(&data)];
+    PackedBits::compress(&data, &mut packed);
 
     println!(
         "({:x} + {:x})\n({:x}) {:x?}",
@@ -26,9 +22,8 @@ fn main() {
         &packed[..packed.len().min(20)]
     );
 
-    let mut unpacked = Vec::new();
-    let mut packed_bits = PackedBitsExtractor::new(&mut unpacked);
-    packed_bits.convert(&packed).unwrap();
+    let mut unpacked = PackedBits::prepare(&packed);
+    PackedBits::extract(&packed, &mut unpacked);
 
     println!(
         "({:x}) {:x?}",

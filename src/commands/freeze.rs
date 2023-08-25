@@ -35,6 +35,7 @@ impl Command for FreezeCommand {
 
         if let Err(e) = compress(input_path, output_path) {
             eprintln!("ERROR: {}", e);
+            return;
         }
 
         println!("{} ...> {}", input_path.display(), output_path.display());

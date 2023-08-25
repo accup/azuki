@@ -45,6 +45,9 @@ impl Command for MicrowaveCommand {
 
         if let Err(e) = extract(input_path, output_path) {
             eprintln!("ERROR: {}", e);
+            return;
         }
+
+        println!("{} ...> {}", input_path.display(), output_path.display());
     }
 }
