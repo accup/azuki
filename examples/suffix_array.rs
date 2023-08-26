@@ -1,4 +1,4 @@
-use std::io::stdin;
+use std::io::{stdin, Read};
 
 use azuki::core::{
     suffix_array::{lcp_array, rank_array, suffix_array, BucketOption, SuffixType},
@@ -19,7 +19,7 @@ impl BucketOption<char> for CharBucket {
 
 fn main() {
     let mut input = String::new();
-    stdin().read_line(&mut input).unwrap();
+    stdin().read_to_string(&mut input).unwrap();
 
     let input = input.trim_end();
 
