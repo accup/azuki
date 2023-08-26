@@ -1,43 +1,36 @@
-use std::path::Path;
-
 use clap::Args;
 
-use azuki::core::compress;
+use azuki::core::lz77::LZ77;
 
-use super::command::Command;
+use crate::commands::{
+    io::{with_extension, Reading, Writing},
+    Command,
+};
 
 pub struct FreezeCommand;
 
 #[derive(Args)]
 pub struct FreezeCommandArgs {
-    pub filename: String,
+    #[arg(short, long)]
+    pub input: Option<String>,
+
+    #[arg(short, long)]
+    pub output: Option<String>,
 }
 
 impl Command for FreezeCommand {
     type Args = FreezeCommandArgs;
 
-    fn execute(&self, args: &Self::Args) {
-        let input_path = Path::new(&args.filename);
-        let output_path_buf = {
-            let mut buf = input_path.to_path_buf();
-            let ext = buf
-                .extension()
-                .map(|ext| ext.to_str().unwrap_or(""))
-                .unwrap_or("");
-            buf.set_extension(if ext.is_empty() {
-                String::from("frozen")
-            } else {
-                format!("{}.frozen", ext)
-            });
-            buf
-        };
-        let output_path = output_path_buf.as_path();
+    fn execute(&self, args: &Self::Args) -> std::io::Result<()> {
+        let input_path = args.input.clone();
+        let output_path = args.output.clone();
+        let output_path = output_path.or(with_extension(input_path.as_deref(), "frozen"));
 
-        if let Err(e) = compress(input_path, output_path) {
-            eprintln!("ERROR: {}", e);
-            return;
-        }
+        let mut reading = Reading::open(input_path.as_deref())?;
+        let mut writing = Writing::create(output_path.as_deref())?;
 
-        println!("{} ...> {}", input_path.display(), output_path.display());
+        LZ77::compress(&reading.read_data()?, &mut writing)?;
+
+        Ok(())
     }
 }

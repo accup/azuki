@@ -39,12 +39,14 @@ enum Commands {
     Dump(DumpCommandArgs),
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Freeze(args) => FreezeCommand.execute(args),
-        Commands::Microwave(args) => MicrowaveCommand.execute(args),
-        Commands::Dump(args) => DumpCommand.execute(args),
+        Commands::Freeze(args) => FreezeCommand.execute(args)?,
+        Commands::Microwave(args) => MicrowaveCommand.execute(args)?,
+        Commands::Dump(args) => DumpCommand.execute(args)?,
     }
+
+    Ok(())
 }

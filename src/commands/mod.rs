@@ -1,6 +1,7 @@
 mod command;
 mod dump;
 mod freeze;
+mod io;
 mod microwave;
 
 pub use command::Command;

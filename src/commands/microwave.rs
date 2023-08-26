@@ -1,53 +1,41 @@
-use std::path::Path;
-
 use clap::Args;
 
-use azuki::core::extract;
+use azuki::core::lz77::LZ77;
 
-use super::command::Command;
+use crate::commands::{
+    io::{Reading, Writing},
+    Command,
+};
+
+use super::io::{with_extension, without_extension};
 
 pub struct MicrowaveCommand;
 
 #[derive(Args)]
 pub struct MicrowaveCommandArgs {
-    pub filename: String,
+    #[arg(short, long)]
+    pub input: Option<String>,
+
+    #[arg(short, long)]
+    pub output: Option<String>,
 }
 
 impl Command for MicrowaveCommand {
     type Args = MicrowaveCommandArgs;
 
-    fn execute(&self, args: &Self::Args) {
-        let input_path = Path::new(&args.filename);
-        let output_path_buf = {
-            let mut buf = input_path.to_path_buf();
-            let ext = buf
-                .extension()
-                .map(|ext| ext.to_str().unwrap_or(""))
-                .unwrap_or("");
-            if ext == "frozen" {
-                buf.set_extension("");
-            }
+    fn execute(&self, args: &Self::Args) -> std::io::Result<()> {
+        let input_path = args.input.clone();
+        let output_path = args.output.clone();
+        let output_path = output_path.or(with_extension(
+            without_extension(input_path.as_deref(), "frozen").as_deref(),
+            "microwaved",
+        ));
 
-            let ext = buf
-                .extension()
-                .map(|ext| ext.to_str().unwrap_or(""))
-                .unwrap_or("");
+        let mut reading = Reading::open(input_path.as_deref())?;
+        let mut writing = Writing::create(output_path.as_deref())?;
 
-            buf.set_extension(if ext.is_empty() {
-                String::from("hot")
-            } else {
-                format!("hot.{}", ext)
-            });
+        LZ77::extract(&reading.read_data()?, &mut writing)?;
 
-            buf
-        };
-        let output_path = output_path_buf.as_path();
-
-        if let Err(e) = extract(input_path, output_path) {
-            eprintln!("ERROR: {}", e);
-            return;
-        }
-
-        println!("{} ...> {}", input_path.display(), output_path.display());
+        Ok(())
     }
 }

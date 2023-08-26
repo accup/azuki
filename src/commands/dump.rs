@@ -1,45 +1,36 @@
-use std::path::Path;
-
 use clap::Args;
 
-use azuki::core::dump;
+use azuki::core::lz77::LZ77;
 
-use super::command::Command;
+use crate::commands::{
+    io::{with_extension, Reading, Writing},
+    Command,
+};
 
 pub struct DumpCommand;
 
 #[derive(Args)]
 pub struct DumpCommandArgs {
-    pub filename: String,
+    #[arg(short, long)]
+    pub input: Option<String>,
+
+    #[arg(short, long)]
+    pub output: Option<String>,
 }
 
 impl Command for DumpCommand {
     type Args = DumpCommandArgs;
 
-    fn execute(&self, args: &Self::Args) {
-        let input_path = Path::new(&args.filename);
-        let output_path_buf = {
-            let mut buf = input_path.to_path_buf();
+    fn execute(&self, args: &Self::Args) -> std::io::Result<()> {
+        let input_path = args.input.clone();
+        let output_path = args.output.clone();
+        let output_path = output_path.or(with_extension(input_path.as_deref(), "dump"));
 
-            let dump_ext = String::from("dump");
-            let ext = buf
-                .extension()
-                .map(|ext| {
-                    ext.to_str()
-                        .map_or(dump_ext.clone(), |ext| format!("{}.{}", ext, dump_ext))
-                })
-                .unwrap_or(dump_ext.clone());
-            buf.set_extension(ext);
+        let mut reading = Reading::open(input_path.as_deref())?;
+        let mut writing = Writing::create(output_path.as_deref())?;
 
-            buf
-        };
-        let output_path = output_path_buf.as_path();
+        LZ77::dump(&reading.read_data()?, &mut writing)?;
 
-        if let Err(e) = dump(input_path, output_path) {
-            eprintln!("ERROR: {}", e);
-            return;
-        }
-
-        println!("{} ...> {}", input_path.display(), output_path.display());
+        Ok(())
     }
 }
