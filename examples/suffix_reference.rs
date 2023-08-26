@@ -21,29 +21,47 @@ fn main() {
     let input = input.trim_end();
     let chars = input.chars().collect::<Vec<_>>();
 
-    let suffix_ref = SuffixReference::from_data(&chars[..], &CharBucket);
+    let suffix = SuffixReference::from_data(&chars[..], &CharBucket);
 
-    loop {
-        let mut index_input = String::new();
-        stdin().read_line(&mut index_input).unwrap();
+    for rank in 0..chars.len() {
+        let index = suffix.index(rank);
+        if let Some(back) = suffix.back(index) {
+            println!("({:>8})", back.lcp);
 
-        let Ok(index) = index_input.trim().parse() else { break };
-        let Some(back) = suffix_ref.back(index) else { continue };
+            println!(
+                "[{:>8}] {}{}",
+                back.index,
+                &String::from_iter(
+                    chars[back.index..chars.len().min(back.index + back.lcp + 1)].into_iter()
+                ),
+                if back.index + back.lcp + 1 < chars.len() {
+                    "..."
+                } else {
+                    ""
+                },
+            );
 
-        println!("({:>8})", back.lcp);
+            println!(
+                "[{:>8}] {}{}",
+                index,
+                &String::from_iter(chars[index..chars.len().min(index + back.lcp + 1)].into_iter()),
+                if index + back.lcp + 1 < chars.len() {
+                    "..."
+                } else {
+                    ""
+                },
+            );
+        } else {
+            println!("({:>8})", 0);
 
-        println!(
-            "[{:>8}] {}{}",
-            back.index,
-            &String::from_iter(chars[back.index..chars.len().min(back.index + 8)].into_iter()),
-            if index + 9 < chars.len() { "..." } else { "" },
-        );
+            println!("[-]");
 
-        println!(
-            "[{:>8}] {}{}",
-            index,
-            &String::from_iter(chars[index..chars.len().min(index + 8)].into_iter()),
-            if index + 9 < chars.len() { "..." } else { "" },
-        );
+            println!(
+                "[{:>8}] {}{}",
+                index,
+                &String::from_iter(chars[index..chars.len().min(index + 1)].into_iter()),
+                if index + 1 < chars.len() { "..." } else { "" },
+            );
+        }
     }
 }

@@ -1,6 +1,9 @@
 use std::io::stdin;
 
-use azuki::core::suffix_array::{lcp_array, rank_array, suffix_array, BucketOption, SuffixType};
+use azuki::core::{
+    suffix_array::{lcp_array, rank_array, suffix_array, BucketOption, SuffixType},
+    suffix_reference::back_array,
+};
 
 struct CharBucket;
 
@@ -24,6 +27,7 @@ fn main() {
     let sa = suffix_array(&chars, &CharBucket);
     let rank = rank_array(&sa);
     let lcp = lcp_array(&chars, &sa, &rank);
+    let back = back_array(&sa, &lcp);
 
     let mut types = vec![SuffixType::L; chars.len()];
     for index in (1..chars.len()).rev() {
@@ -36,20 +40,29 @@ fn main() {
         };
     }
 
-    for (&index, &lcp) in sa.iter().zip(lcp.iter()) {
+    for (rank, &index) in sa.iter().enumerate() {
+        let stop = index + 8;
+        let stop = chars.len().min(stop);
         println!(
-            "{:>8} ({:>8}): {:<13} {}",
+            "{:>8} ({:>8}) [{}{:>7} ({}{:>7})]: {}{}",
             index,
-            lcp,
-            format!(
-                "{}{}",
-                String::from_iter(chars[index..chars.len().min(index + 8)].into_iter()),
-                if index + 8 < chars.len() { "..." } else { "" }
-            ),
-            match types[index] {
-                SuffixType::L => "L",
-                SuffixType::S => "S",
-            }
+            lcp[rank],
+            back[index].map_or(Default::default(), |b| format!(
+                "{}",
+                if index <= b.index { "!" } else { " " }
+            )),
+            back[index].map_or(Default::default(), |b| format!("{}", b.index)),
+            back[index].map_or(Default::default(), |b| format!(
+                "{}",
+                if lcp[rank] < b.lcp && lcp.get(rank + 1).map_or(false, |l| *l < b.lcp) {
+                    "!"
+                } else {
+                    " "
+                }
+            )),
+            back[index].map_or(Default::default(), |b| format!("{}", b.lcp)),
+            String::from_iter(chars[index..stop].into_iter()),
+            if stop < chars.len() { "..." } else { "" },
         );
     }
 }

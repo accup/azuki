@@ -397,7 +397,7 @@ pub fn suffix_array<T, B: BucketOption<T>>(data: &[T], bucket_option: &B) -> Vec
         }
 
         lms_orders[index] = lms_ranges.len();
-        lms_ranges.push((index, data.len()));
+        lms_ranges.push((index, data.len() + 1));
     }
 
     let mut bucket = SuffixArrayBucket::new(data, &types, bucket_option);
@@ -435,12 +435,20 @@ pub fn suffix_array<T, B: BucketOption<T>>(data: &[T], bucket_option: &B) -> Vec
                     let last_lms_len = last_lms_range.1 - last_lms_range.0;
 
                     let is_same = (lms_len == last_lms_len) && {
-                        (0..lms_len).any(|i| {
-                            let class = bucket_option.bucket_index(&data[lms_range.0 + i]);
-                            let last_class =
-                                bucket_option.bucket_index(&data[last_lms_range.0 + i]);
+                        (0..lms_len).all(|i| {
+                            let index = lms_range.0 + i;
+                            let last_index = last_lms_range.0 + i;
 
-                            class == last_class
+                            // terminal character
+                            if (index >= data.len() || last_index >= data.len())
+                                && (index != last_index)
+                            {
+                                false
+                            } else {
+                                let class = bucket_option.bucket_index(&data[index]);
+                                let last_class = bucket_option.bucket_index(&data[last_index]);
+                                class == last_class
+                            }
                         })
                     };
 
@@ -498,18 +506,18 @@ pub fn lcp_array<T: PartialEq + PartialOrd>(
         return vec![];
     }
 
-    let mut lcp_array = vec![0usize; data.len()];
+    let mut lcp_array = vec![0; data.len()];
     let mut lcp = 0;
 
-    for index1 in 0..data.len() {
-        let rank1 = rank_array[index1];
-        let rank0 = if rank1 > 0 {
-            rank1 - 1
+    for index0 in 0..data.len() {
+        let rank0 = rank_array[index0];
+        let rank1 = if rank0 + 1 < data.len() {
+            rank0 + 1
         } else {
             lcp = 0;
             continue;
         };
-        let index0 = suffix_array[rank0];
+        let index1 = suffix_array[rank1];
 
         while index0 + lcp < data.len()
             && index1 + lcp < data.len()

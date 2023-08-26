@@ -36,7 +36,6 @@ impl LZ77 {
                         left: index - back.index,
                         count: back.lcp,
                     };
-                    println!("{} {}", index, back.index);
                     let m_stop = index + match_.count;
 
                     let m_size = MatchLayout::measure(&match_);
