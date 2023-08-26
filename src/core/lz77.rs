@@ -126,14 +126,12 @@ impl LZ77 {
                     memory.push(memory[back_start + i]);
                 }
 
-                writer.write_all("M".as_bytes())?;
                 writer.write_all(&memory[cursor..])?;
                 head += read_size;
             } else {
                 let mut data = PackedBits::prepare(buffer);
                 let read_size = PackedBits::extract(buffer, &mut data);
                 memory.extend_from_slice(&data);
-                writer.write_all("P".as_bytes())?;
                 writer.write_all(&data)?;
                 head += read_size;
             }
