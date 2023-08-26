@@ -44,7 +44,8 @@ impl LZ77 {
                     } else {
                         0
                     };
-                    let p_size = PackedBits::measure(&data[head..m_stop]);
+                    // let p_size = PackedBits::measure(&data[head..m_stop]);
+                    let p_size = m_stop - head;
 
                     if m_size + mp_size < p_size {
                         if head < index {
