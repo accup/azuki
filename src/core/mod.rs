@@ -9,7 +9,9 @@ pub mod suffix_array;
 pub mod suffix_reference;
 
 mod compress;
+mod dump;
 mod extract;
 
 pub use compress::compress;
+pub use dump::dump;
 pub use extract::extract;

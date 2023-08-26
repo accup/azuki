@@ -139,4 +139,40 @@ impl LZ77 {
 
         Ok(())
     }
+
+    pub fn dump(buffer: &[u8], writer: &mut impl Write) -> std::io::Result<()> {
+        let mut head = 0;
+
+        while head < buffer.len() {
+            let buffer = &buffer[head..];
+
+            if MatchLayout::check(&buffer) {
+                let mut match_ = MatchLayout::prepare(buffer);
+                let read_size = MatchLayout::extract(buffer, &mut match_);
+
+                writeln!(
+                    writer,
+                    "{:>8x} ({:>8x}): M left: {:x}, count: {:x}",
+                    head, read_size, match_.left, match_.count
+                )?;
+
+                head += read_size;
+            } else {
+                let mut data = PackedBits::prepare(buffer);
+                let read_size = PackedBits::extract(buffer, &mut data);
+
+                writeln!(
+                    writer,
+                    "{:>8x} ({:>8x}): P count: {:x}",
+                    head,
+                    read_size,
+                    data.len()
+                )?;
+
+                head += read_size;
+            }
+        }
+
+        Ok(())
+    }
 }
