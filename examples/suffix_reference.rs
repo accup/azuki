@@ -18,7 +18,6 @@ fn main() {
     let mut input = String::new();
     stdin().read_to_string(&mut input).unwrap();
 
-    let input = input.trim_end();
     let chars = input.chars().collect::<Vec<_>>();
 
     let suffix = SuffixReference::from_data(&chars[..], &CharBucket);

@@ -21,8 +21,6 @@ fn main() {
     let mut input = String::new();
     stdin().read_to_string(&mut input).unwrap();
 
-    let input = input.trim_end();
-
     let chars = input.chars().collect::<Vec<_>>();
     let sa = suffix_array(&chars, &CharBucket);
     let rank = rank_array(&sa);
