@@ -16,13 +16,34 @@ cargo build --release
 ### Freeze (Compress)
 
 ```bash
-azuki freeze INPUT_FILENAME[.EXT]
-# file generated at INPUT_FILENAME[.EXT].frozen
+azuki freeze -i INPUT_FILENAME [-o OUTPUT_FILENAME]
 ```
+
+- short command name supported (`f`, `fr`, `fre`, `free` and `freez`)
+- output defaults to `INPUT_FILENAME.frozen`
+
+#### From stdin
+
+```bash
+azuki freeze [-o OUTPUT_FILENAME] < INPUT_FILENAME
+```
+
+- output defaults to stdout
+
 
 ### Microwave (Extract)
 
 ```bash
-azuki microwave INPUT_FILENAME[.EXT].frozen
-# file generated at INPUT_FILENAME.hot[.EXT]
+azuki microwave -i INPUT_FILENAME.frozen
 ```
+
+- short command name supported (`m`, `mi`, `mic`, `micr`, `micro`, `microw`, `microwa` and `microwav`)
+- output defaults to `INPUT_FILENAME.microwaved`
+
+#### From stdin
+
+```bash
+azuki microwave [-o OUTPUT_FILENAME] < INPUT_FILENAME
+```
+
+- output defaults to stdout
