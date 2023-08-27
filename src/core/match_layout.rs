@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use super::head::{Head, HeadType, LeadingZero};
+use super::head::{Common, Head, HeadType, LeadingZero};
 
 #[derive(Debug)]
 pub struct Match {
@@ -12,17 +12,17 @@ pub struct MatchLayout;
 
 impl MatchLayout {
     pub fn measure(data: &Match) -> usize {
-        Head::<LeadingZero>::measure(&data.left) + Head::<LeadingZero>::measure(&data.count)
+        Head::<LeadingZero>::measure(&data.count) + Head::<Common>::measure(&data.left)
     }
 
     pub fn compress(data: &Match, buffer: &mut [u8]) -> usize {
-        let mut cursor = Head::<LeadingZero>::compress(&data.left, buffer);
-        cursor += Head::<LeadingZero>::compress(&data.count, &mut buffer[cursor..]);
+        let mut cursor = Head::<LeadingZero>::compress(&data.count, buffer);
+        cursor += Head::<Common>::compress(&data.left, &mut buffer[cursor..]);
         cursor
     }
 
     pub fn check(buffer: &[u8]) -> bool {
-        LeadingZero::count_leading(buffer) > 0
+        LeadingZero::count(buffer) > 0
     }
 
     pub fn prepare(_: &[u8]) -> Match {
@@ -33,8 +33,8 @@ impl MatchLayout {
     }
 
     pub fn extract(buffer: &[u8], data: &mut Match) -> usize {
-        let mut cursor = Head::<LeadingZero>::extract(buffer, &mut data.left);
-        cursor += Head::<LeadingZero>::extract(&buffer[cursor..], &mut data.count);
+        let mut cursor = Head::<LeadingZero>::extract(buffer, &mut data.count);
+        cursor += Head::<Common>::extract(&buffer[cursor..], &mut data.left);
         cursor
     }
 }
