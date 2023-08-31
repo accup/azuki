@@ -34,7 +34,7 @@ azuki freeze [-o OUTPUT_FILENAME] < INPUT_FILENAME
 ### Microwave (Extract)
 
 ```bash
-azuki microwave -i INPUT_FILENAME.frozen
+azuki microwave -i INPUT_FILENAME.frozen [-o OUTPUT_FILENAME]
 ```
 
 - short command name supported (`m`, `mi`, `mic`, `micr`, `micro`, `microw`, `microwa` and `microwav`)
